@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -38,7 +39,6 @@ func main() {
 	}
 
 	redisURL := os.Getenv("REDIS_URL")
-	port := os.Getenv("PORT")
 
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
@@ -50,10 +50,8 @@ func main() {
 	http.HandleFunc("/websocket", handleConnections)
 	go handleMessages()
 
-	log.Print("Server starting at localhost:4444")
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal(err)
-	}
+	port := os.Getenv("PORT")
+	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
