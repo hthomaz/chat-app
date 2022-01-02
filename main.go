@@ -5,7 +5,12 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
+)
+
+var (
+	rdb *redis.Client
 )
 
 func main() {
@@ -13,6 +18,13 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
+	redisURL := os.Getenv("REDIS_URL")
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		panic(err)
+	}
+	rdb = redis.NewClient(opt)
 
 	port := os.Getenv("PORT")
 	http.Handle("/", http.FileServer(http.Dir("./public")))
