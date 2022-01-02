@@ -19,7 +19,7 @@ var (
 
 type ChatMessage struct {
 	Username string `json:"username"`
-	Text     string `json:"text`
+	Text     string `json:"text"`
 }
 
 var clients = make(map[*websocket.Conn]bool)
@@ -83,6 +83,8 @@ func sendPreviousMessages(ws *websocket.Conn) {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println(chatMessages)
 
 	for _, chatMessage := range chatMessages {
 		var msg ChatMessage
