@@ -62,7 +62,8 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 	clients[ws] = true
 
-	if rdb.Exists("chats_messages").Val() != 0 {
+	fmt.Println(rdb.Exists("chat_messages").Val())
+	if rdb.Exists("chat_messages").Val() != 0 {
 		sendPreviousMessages(ws)
 	}
 
