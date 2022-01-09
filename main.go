@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
@@ -18,8 +19,10 @@ var (
 )
 
 type ChatMessage struct {
-	Username string `json:"username"`
-	Text     string `json:"text"`
+	Username    string `json:"username"`
+	Text        string `json:"text"`
+	Color       string `json:"color"`
+	Destination string `json:"destination"`
 }
 
 var clients = make(map[*websocket.Conn]bool)
@@ -62,7 +65,6 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 	clients[ws] = true
 
-	fmt.Println(rdb.Exists("chat_messages").Val())
 	if rdb.Exists("chat_messages").Val() != 0 {
 		sendPreviousMessages(ws)
 	}
@@ -85,8 +87,6 @@ func sendPreviousMessages(ws *websocket.Conn) {
 		panic(err)
 	}
 
-	fmt.Println(chatMessages)
-
 	for _, chatMessage := range chatMessages {
 		var msg ChatMessage
 		json.Unmarshal([]byte(chatMessage), &msg)
@@ -97,8 +97,27 @@ func sendPreviousMessages(ws *websocket.Conn) {
 func handleMessages() {
 	for {
 		msg := <-broadcaster
+		dealWithCommandMsg(&msg)
+		fmt.Println(msg)
 		storeInRedis(msg)
 		sendMessageToClients(msg)
+	}
+}
+
+func dealWithCommandMsg(msg *ChatMessage) {
+
+	text := msg.Text
+	if strings.HasPrefix(text, "/whisp_") {
+		MsgParts := strings.Split(text, " ")
+		msg.Destination = strings.Trim(MsgParts[0], "/whisp_")
+		msg.Text = strings.Trim(msg.Text, MsgParts[0])
+		msg.Text = fmt.Sprintln(msg.Text, "(whisp)")
+	} else if strings.HasPrefix(text, "/flood") {
+		msg.Text = strings.Trim(msg.Text, "/flood")
+		for i := 0; i < 2; i++ {
+			storeInRedis(*msg)
+			sendMessageToClients(*msg)
+		}
 	}
 }
 
@@ -115,6 +134,7 @@ func storeInRedis(msg ChatMessage) {
 
 func sendMessageToClients(msg ChatMessage) {
 	for client := range clients {
+
 		sendMessageToClient(client, msg)
 	}
 }
