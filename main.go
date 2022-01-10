@@ -132,8 +132,12 @@ func dealWithCommandMsg(msg *ChatMessage) {
 			msg.Text = fmt.Sprintln("Color changed to", newColor)
 		} else {
 			msg.Text = "Color not Avaliable"
+			msg.Username = "System"
 		}
-
+	} else if strings.HasPrefix(text, "/count") {
+		msg.Text = fmt.Sprintf("Number of active users in chat is:%d", len(clients))
+		msg.Destination = msg.Username
+		msg.Username = "System"
 	}
 }
 
