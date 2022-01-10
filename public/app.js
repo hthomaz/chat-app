@@ -17,7 +17,7 @@ window.addEventListener("DOMContentLoaded", (_) => {
       console.log("entrou")
       let p = document.createElement("p");
       p.innerHTML = `<strong>${data.username}</strong>: ${data.text}`;
-      
+      p.style.color = data.color
       room.append(p);
       room.scrollTop = room.scrollHeight; // Auto scroll to the bottom
     }

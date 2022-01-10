@@ -25,6 +25,8 @@ type ChatMessage struct {
 	Destination string `json:"destination"`
 }
 
+var possibleColors = []string{"blue", "black", "green"}
+var currentColor = "black"
 var clients = make(map[*websocket.Conn]bool)
 var broadcaster = make(chan ChatMessage)
 var upgrader = websocket.Upgrader{
@@ -98,7 +100,7 @@ func handleMessages() {
 	for {
 		msg := <-broadcaster
 		dealWithCommandMsg(&msg)
-		fmt.Println(msg)
+		msg.Color = currentColor
 		storeInRedis(msg)
 		sendMessageToClients(msg)
 	}
@@ -118,6 +120,15 @@ func dealWithCommandMsg(msg *ChatMessage) {
 			storeInRedis(*msg)
 			sendMessageToClients(*msg)
 		}
+	} else if strings.HasPrefix(text, "/color") {
+		newColor := strings.Trim(msg.Text, "/color ")
+		if stringInSlice(newColor, possibleColors) {
+			currentColor = newColor
+			msg.Text = fmt.Sprintln("Color changed to", newColor)
+		} else {
+			msg.Text = "Color not Avaliable"
+		}
+
 	}
 }
 
@@ -151,4 +162,13 @@ func sendMessageToClient(client *websocket.Conn, msg ChatMessage) {
 // If a message is sent while a client is closing, ignore the error
 func unsafeError(err error) bool {
 	return !websocket.IsCloseError(err, websocket.CloseGoingAway) && err != io.EOF
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
