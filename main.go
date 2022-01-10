@@ -99,8 +99,8 @@ func sendPreviousMessages(ws *websocket.Conn) {
 func handleMessages() {
 	for {
 		msg := <-broadcaster
-		dealWithCommandMsg(&msg)
 		msg.Color = currentColor
+		dealWithCommandMsg(&msg)
 		storeInRedis(msg)
 		sendMessageToClients(msg)
 	}
@@ -111,19 +111,24 @@ func dealWithCommandMsg(msg *ChatMessage) {
 	text := msg.Text
 	if strings.HasPrefix(text, "/whisp_") {
 		MsgParts := strings.Split(text, " ")
-		msg.Destination = strings.Trim(MsgParts[0], "/whisp_")
-		msg.Text = strings.Trim(msg.Text, MsgParts[0])
+		msg.Destination = strings.TrimPrefix(MsgParts[0], "/whisp_")
+		msg.Text = strings.TrimPrefix(msg.Text, MsgParts[0])
 		msg.Text = fmt.Sprintln(msg.Text, "(whisp)")
+
 	} else if strings.HasPrefix(text, "/flood") {
-		msg.Text = strings.Trim(msg.Text, "/flood")
+		fmt.Println(msg)
+		msg.Text = strings.TrimPrefix(msg.Text, "/flood ")
+		fmt.Println(msg)
 		for i := 0; i < 2; i++ {
 			storeInRedis(*msg)
 			sendMessageToClients(*msg)
 		}
+
 	} else if strings.HasPrefix(text, "/color") {
-		newColor := strings.Trim(msg.Text, "/color ")
+		newColor := strings.TrimPrefix(msg.Text, "/color ")
 		if stringInSlice(newColor, possibleColors) {
 			currentColor = newColor
+			msg.Color = currentColor
 			msg.Text = fmt.Sprintln("Color changed to", newColor)
 		} else {
 			msg.Text = "Color not Avaliable"
