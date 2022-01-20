@@ -25,6 +25,8 @@ type ChatMessage struct {
 	Destination string `json:"destination"`
 }
 
+type MiddleWare = func(*websocket.Conn, ChatMessage) ChatMessage
+
 var possibleColors = []string{"blue", "black", "green"}
 var currentColor = "black"
 var clients = make(map[*websocket.Conn]bool)
@@ -71,16 +73,33 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		sendPreviousMessages(ws)
 	}
 
+	middleWares := []MiddleWare{jsonMiddleWare, setColorMiddleWare}
+
 	for {
 		var msg ChatMessage
 
-		err := ws.ReadJSON(&msg)
-		if err != nil {
-			delete(clients, ws)
-			break
+		for _, middleWare := range middleWares {
+			msg = middleWare(ws, msg)
 		}
+		// if err != nil {
+		// 	delete(clients, ws)
+		// 	break
+		// }
+
 		broadcaster <- msg
 	}
+}
+
+func jsonMiddleWare(ws *websocket.Conn, _ ChatMessage) ChatMessage {
+	var msg ChatMessage
+	ws.ReadJSON(&msg)
+
+	return msg
+}
+
+func setColorMiddleWare(_ *websocket.Conn, msg ChatMessage) ChatMessage {
+	msg.Color = currentColor
+	return msg
 }
 
 func sendPreviousMessages(ws *websocket.Conn) {
@@ -99,7 +118,6 @@ func sendPreviousMessages(ws *websocket.Conn) {
 func handleMessages() {
 	for {
 		msg := <-broadcaster
-		msg.Color = currentColor
 		dealWithCommandMsg(&msg)
 		storeInRedis(msg)
 		sendMessageToClients(msg)
@@ -116,9 +134,7 @@ func dealWithCommandMsg(msg *ChatMessage) {
 		msg.Text = fmt.Sprintln(msg.Text, "(whisp)")
 
 	} else if strings.HasPrefix(text, "/flood") {
-		fmt.Println(msg)
 		msg.Text = strings.TrimPrefix(msg.Text, "/flood ")
-		fmt.Println(msg)
 		for i := 0; i < 2; i++ {
 			storeInRedis(*msg)
 			sendMessageToClients(*msg)
