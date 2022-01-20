@@ -151,7 +151,7 @@ func dealWithCommandMsg(msg *ChatMessage) {
 			msg.Username = "System"
 		}
 	} else if strings.HasPrefix(text, "/count") {
-		msg.Text = fmt.Sprintf("Number of active users in chat is:%d", len(clients))
+		msg.Text = fmt.Sprintf("Number of active users in chat is: %d", len(clients))
 		msg.Destination = msg.Username
 		msg.Username = "System"
 	}
