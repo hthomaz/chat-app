@@ -31,12 +31,13 @@ function createWebsocket() {
   }
 }
 
-websocket.onmessage = function(msg){
-  let data = JSON.parse(msg.data)
-  if (checkMsgDestination(data)) {
-    insertMessage(data)
+if (websocket !== undefined) {
+  websocket.onmessage = function(msg){
+    let data = JSON.parse(msg.data)
+    if (checkMsgDestination(data)) {
+      insertMessage(data)
+    }
   }
-  
 }
 
 function insertMessage (messageObj) {
