@@ -20,8 +20,6 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type MiddleWare = func(*websocket.Conn, ChatMessage) ChatMessage
-
 func Obverser(redisURL, port string) {
 	err := ConnectToDataBase(redisURL)
 	if err != nil {
@@ -53,31 +51,6 @@ func handleMessages() {
 	}
 }
 
-func jsonMiddleWare(ws *websocket.Conn, _ ChatMessage) ChatMessage {
-	var msg ChatMessage
-	ws.ReadJSON(&msg)
-
-	return msg
-}
-
-func setColorMiddleWare(_ *websocket.Conn, msg ChatMessage) ChatMessage {
-	msg.Color = currentColor
-	return msg
-}
-
-func sendPreviousMessages(ws *websocket.Conn) {
-	chatMessages, err := rdb.LRange("chat_messages", 0, -1).Result()
-	if err != nil {
-		panic(err)
-	}
-
-	for _, chatMessage := range chatMessages {
-		var msg ChatMessage
-		json.Unmarshal([]byte(chatMessage), &msg)
-		sendMessageToClient(ws, msg)
-	}
-}
-
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -90,20 +63,30 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		sendPreviousMessages(ws)
 	}
 
-	middleWares := []MiddleWare{jsonMiddleWare, setColorMiddleWare}
-
 	for {
 		var msg ChatMessage
+		err := ws.ReadJSON(&msg)
+		msg.Color = currentColor
 
-		for _, middleWare := range middleWares {
-			msg = middleWare(ws, msg)
+		if err != nil {
+			delete(clients, ws)
+			break
 		}
-		// if err != nil {
-		// 	delete(clients, ws)
-		// 	break
-		// }
 
 		broadcaster <- msg
+	}
+}
+
+func sendPreviousMessages(ws *websocket.Conn) {
+	chatMessages, err := rdb.LRange("chat_messages", 0, -1).Result()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, chatMessage := range chatMessages {
+		var msg ChatMessage
+		json.Unmarshal([]byte(chatMessage), &msg)
+		sendMessageToClient(ws, msg)
 	}
 }
 

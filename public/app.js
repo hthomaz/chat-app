@@ -1,5 +1,6 @@
 const sendLogin = document.querySelector('#send-login')
 const sendMessage = document.querySelector('#send-message')
+const room = document.querySelector('#chat-text')
 let activeUsername
 let websocket
 
@@ -29,18 +30,18 @@ function createWebsocket() {
   } else {
     websocket = new WebSocket("wss://" + window.location.host + "/websocket");
   }
-}
 
-if (websocket !== undefined) {
   websocket.onmessage = function(msg){
     let data = JSON.parse(msg.data)
+    console.log(data)
     if (checkMsgDestination(data)) {
       insertMessage(data)
     }
   }
 }
 
-function insertMessage (messageObj) {
+
+function insertMessage (data) {
   let p = document.createElement("p");
   p.innerHTML = `<strong>${data.username}</strong>: ${data.text}`;
   p.style.color = data.color
@@ -48,7 +49,7 @@ function insertMessage (messageObj) {
   room.scrollTop = room.scrollHeight; // Auto scroll to the bottom
 }
 
-function checkMsgDestination (messageObj) {
+function checkMsgDestination (data) {
   if (data.destination === "all" || data.destination === activeUsername.value || data.username === activeUsername.value) {
     return true
   }
