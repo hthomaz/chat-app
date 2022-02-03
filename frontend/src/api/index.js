@@ -23,8 +23,16 @@ let connect = cb => {
 };
 
 let sendMsg = msg => {
-  console.log("sending msg: ", msg);
-  //socket.send(msg);
+  //console.log("sending msg: ", msg);
+  
+  socket.send(
+      JSON.stringify({
+          username: "MockUsername",
+          text: msg,
+          color : "black",
+          destination: "all"
+      })
+  )
 };
 
 export { connect, sendMsg };
