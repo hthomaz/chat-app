@@ -9,8 +9,9 @@ class ChatHistory extends Component {
     //     const colorStyle = {color : data.color}
     //     return <p key={index} style={colorStyle}> <strong>{data.username}</strong>: {data.text}</p>
     // });
-    const messages = this.props.chatHistory.map((msg, index) => <Message key = {index} message={msg} />);
-
+    const username = this.props.username;
+    const messages = this.props.chatHistory.map((msg, index) => <Message key = {index} message={msg} username = {username}/>);
+ 
     return (
       <div className="ChatHistory">
         <h2>Chat History</h2>

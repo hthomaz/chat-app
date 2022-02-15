@@ -1,5 +1,10 @@
 // api/index.js
-var socket = new WebSocket("ws://" + "localhost:4444" + "/websocket");
+if(window.location.host === "localhost:3000"){
+  var socket = new WebSocket("ws://" + "localhost:4444" + "/websocket");
+} else {
+  var socket = new WebSocket("wss://" + window.location.host + "/websocket");
+}
+
 
 let connect = cb => {
   console.log("Attempting Connection...");
@@ -22,12 +27,12 @@ let connect = cb => {
   };
 };
 
-let sendMsg = msg => {
+let sendMsg = (msg,username) => {
   //console.log("sending msg: ", msg);
   
   socket.send(
       JSON.stringify({
-          username: "MockUsername",
+          username: username,
           text: msg,
           color : "black",
           destination: "all"
